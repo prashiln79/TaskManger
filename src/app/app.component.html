@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Mini-Task Manager</title>
+  </head>
+
+  <body class="container-fluid">
+    <header>
+      <nav class="navbar navbar-light">
+        <!-- Logo -->
+        <a class="navbar-brand" href="#">
+          <img
+            src="assets/logo.png"
+            width="48"
+            height="48"
+            class="d-inline-block align-top"
+            alt=""
+          /><span id="logoText">Mini-Task Manager</span>
+        </a>
+        <!--searchBar-->
+        <div class="row">
+          <div class="col-sm-6">
+            <div class="form-group has-search">
+              <div ngbDropdown class="d-inline-block">
+                <span class="fa fa-search form-control-feedback"></span>
+                <input
+                  type="text"
+                  class="form-control"
+                  ngbDropdownToggle
+                  placeholder="Search"
+                  [(ngModel)]="searchFilter"/>
+                <div
+                  ngbDropdownMenu
+                  aria-labelledby="dropdownBasic1"
+                  class="searchBar">
+                  <button ngbDropdownItem>
+                    <h3>
+                      <i class="fa fa-users" aria-hidden="true"></i> People
+                    </h3>
+                    <ul>
+                      <ng-container
+                        *ngFor="
+                          let item of usersList | filterBy: searchFilter;
+                          index as i
+                        "
+                      >
+                        <li>
+                          <div class="avatar">
+                            <img class="avatarImg" src="{{ item.picture }}" />
+                          </div>
+                          <span class="avText">{{ item.name }}</span>
+                        </li>
+                      </ng-container>
+                    </ul>
+                  </button>
+                  <button ngbDropdownItem>
+                    <h3><i class="fa fa-tasks" aria-hidden="true"></i> Task</h3>
+                    <ul>
+                      <ng-container
+                        *ngFor="
+                          let List of tasksList | filterBy: searchFilter;
+                          index as i
+                        "
+                      >
+                        <li *ngIf="i < 5">
+                          <div
+                            class="avatar"
+                            style="background-color: cornflowerblue"
+                          >
+                            {{ List.catg }}
+                          </div>
+                          <span class="avText">{{ List.taskName }}</span>
+                        </li>
+                      </ng-container>
+                    </ul>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <ng-container *ngFor="let item of usersList; index as i">
+              <div
+                *ngIf="i < 5"
+                class="text-center"
+                class="avatar"
+                placement="bottom"
+                ngbTooltip="{{ item.name }}"
+              >
+                <img class="avatarImg" src="{{ item.picture }}" />
+                <div
+                  class="centered"
+                  style="position: absolute; font-size: 19px; opacity: 0.8"
+                >
+                  {{ genName(item.name) }}
+                </div>
+              </div>
+            </ng-container>
+            <button
+              id="sharebtn"
+              type="button"
+              class="btn btn-default"
+              ngbTooltip="Share by email"
+            >
+              <i class="fa fa-users"></i> Share
+            </button>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <section class="main">
+      <div class="row">
+        <button
+          id="addBtn"
+          type="button"
+          (click)="addRow()"
+          class="btn btn-default"
+        >
+          <i class="fa fa-plus"></i> Add task
+        </button>
+      </div>
+      <div class="row">
+        <!-- Table to display Task -->
+        <table class="table">
+          <thead>
+            <tr class="d-flex">
+              <th class="col-5" (click)="sortBy('taskName')">
+                Task name<i class="fa fa-sort" aria-hidden="true"></i>
+              </th>
+              <th class="col-2" (click)="sortBy('assignee')">
+                Assignee<i class="fa fa-sort" aria-hidden="true"></i>
+              </th>
+              <th class="col-2" (click)="sortBy('dueDate')">
+                Due date<i class="fa fa-sort" aria-hidden="true"></i>
+              </th>
+              <th class="col-1" (click)="sortBy('priority')">
+                Priority<i class="fa fa-sort" aria-hidden="true"></i>
+              </th>
+              <th class="col-1" (click)="sortBy('status')">
+                Status<i class="fa fa-sort" aria-hidden="true"></i>
+              </th>
+              <th class="col-1">Action</th>
+            </tr>
+          </thead>
+          <div class="row">
+            <h2 class="secHead">To do</h2>
+          </div>
+          <!-- TODO list -->
+          <tbody
+            cdkDropList
+            #todoList="cdkDropList"
+            [cdkDropListData]="todoLists"
+            [cdkDropListConnectedTo]="[doneList]"
+            class="example-list"
+            (cdkDropListDropped)="drop($event)"
+          >
+            <tr
+              cdkDrag
+              class="d-flex"
+              *ngFor="let list of todoLists; index as rowID"
+              (click)="selectedRow = rowID"
+            >
+              <!--Task Name-->
+              <td style="padding-left: 29px" class="col-5">
+                <textarea
+                  ALIGN="MIDDLE"
+                  id="taskName"
+                  placeholder="Write a Task Name"
+                  [(ngModel)]="list.taskName"
+                  >{{ list.taskName }}</textarea
+                >
+              </td>
+              <!--Assignee-->
+              <td class="col-2">
+                <div ngbDropdown class="d-inline-block">
+                  <button
+                    class="btn tbDropDown"
+                    id="dropdownBasic1"
+                    ngbDropdownToggle
+                  >
+                    <ng-container *ngIf="list.assignee">
+                      <div class="avatar">
+                        <img
+                          class="avatarImg"
+                          [src]="getassignee(list.assignee, 'picture')"
+                        />
+                      </div>
+                      <span
+                        class="avText"
+                        [innerText]="getassignee(list.assignee, 'name')"
+                      ></span>
+                    </ng-container>
+                  </button>
+                  <div ngbDropdownMenu aria-labelledby="dropdownBasic1">
+                    <ng-container *ngFor="let item of usersList; index as i">
+                      <button
+                        ngbDropdownItem
+                        (click)="list.assignee = item.name"
+                      >
+                        <div class="avatar">
+                          <img class="avatarImg" src="{{ item.picture }}" />
+                        </div>
+                        <span class="avText">{{ item.name }}</span>
+                      </button>
+                    </ng-container>
+                  </div>
+                </div>
+              </td>
+              <!-- Due date -->
+              <td class="col-2">
+                <div class="form-group hidden">
+                  <div class="input-group">
+                    <input
+                      name="datepicker"
+                      [(ngModel)]="list.dueDate"
+                      class="form-control due_date"
+                      ngbDatepicker
+                      #datepicker="ngbDatepicker"
+                      [autoClose]="'outside'"
+                      (dateSelect)="onDateSelection($event)"
+                      [dayTemplate]="t"
+                      outsideDays="hidden"
+                      [startDate]="list.dueDate"
+                      (click)="datepicker.toggle()"
+                      tabindex="-1"
+                    />
+                    <ng-template #t let-date let-focused="focused">
+                      <span
+                        class="custom-day"
+                        [class.focused]="focused"
+                        [class.range]="isRange(date)"
+                        [class.faded]="isHovered(date) || isInside(date)"
+                        (mouseenter)="hoveredDate = date"
+                        (mouseleave)="hoveredDate = null"
+                      >
+                        {{ date.day }}
+                      </span>
+                    </ng-template>
+                  </div>
+                </div>
+              </td>
+              <!-- Priority -->
+              <td class="col-1">
+                <div ngbDropdown class="d-inline-block">
+                  <button
+                    class="btn tbDropDown"
+                    id="dropdownBasic1"
+                    ngbDropdownToggle
+                  >
+                    <div [class]="'pill ' + list.priority">
+                      {{ list.priority }}
+                    </div>
+                  </button>
+                  <div ngbDropdownMenu aria-labelledby="dropdownBasic1">
+                    <ng-container *ngFor="let priority of priorityList">
+                      <button
+                        ngbDropdownItem
+                        (click)="list.priority = priority"
+                      >
+                        <div [class]="'pill ' + priority">{{ priority }}</div>
+                      </button>
+                    </ng-container>
+                  </div>
+                </div>
+              </td>
+              <!-- Status -->
+              <td class="col-1">
+                <div ngbDropdown class="d-inline-block">
+                  <button
+                    class="btn tbDropDown"
+                    id="dropdownBasic1"
+                    ngbDropdownToggle
+                  >
+                    <div [class]="'pill ' + list.status">{{ list.status }}</div>
+                  </button>
+                  <div ngbDropdownMenu aria-labelledby="dropdownBasic1">
+                    <ng-container *ngFor="let status of statusList">
+                      <button ngbDropdownItem (click)="list.status = status">
+                        <div [class]="'pill ' + status">{{ status }}</div>
+                      </button>
+                    </ng-container>
+                  </div>
+                </div>
+              </td>
+              <!-- Action -->
+              <td class="col-1">
+                <!-- <button style="margin: 9px 10px;" id="addBtn" type="button" (click)="addTask(list)" class="btn btn-default">
+                  <i class="fa fa-plus"></i> Add
+                </button> -->
+                <button
+                  style="margin: 9px 10px"
+                  id="addBtn"
+                  type="button"
+                  (click)="deleteTodoLists(list.id)"
+                  class="btn btn-default"
+                >
+                  <i class="fa fa-trash"></i> Delete
+                </button>
+              </td>
+            </tr>
+          </tbody>
+
+          <div class="row">
+            <h2 class="secHead" style="margin-top: 5em">Done</h2>
+          </div>
+        <!-- Done List start here-->
+          <tbody
+            cdkDropList
+            #doneList="cdkDropList"
+            [cdkDropListData]="doneLists"
+            [cdkDropListConnectedTo]="[todoList]"
+            class="example-list"
+            (cdkDropListDropped)="drop($event)"
+          >
+            <tr
+              cdkDrag
+              class="d-flex"
+              *ngFor="let list of doneLists; index as rowID"
+              (click)="selectedRow = rowID"
+            >
+              <!--Task Name-->
+              <td style="padding-left: 29px" class="col-5">
+                <textarea
+                  ALIGN="MIDDLE"
+                  id="taskName"
+                  [(ngModel)]="list.taskName"
+                  >{{ list.taskName }}</textarea
+                >
+              </td>
+              <!--Assignee-->
+              <td class="col-2">
+                <div ngbDropdown class="d-inline-block">
+                  <button
+                    class="btn tbDropDown"
+                    id="dropdownBasic1"
+                    ngbDropdownToggle
+                  >
+                    <ng-container *ngIf="list.assignee">
+                      <div class="avatar">
+                        <img
+                          class="avatarImg"
+                          [src]="getassignee(list.assignee, 'picture')"
+                        />
+                      </div>
+                      <span
+                        class="avText"
+                        [innerText]="getassignee(list.assignee, 'name')"
+                      ></span>
+                    </ng-container>
+                  </button>
+                  <div ngbDropdownMenu aria-labelledby="dropdownBasic1">
+                    <ng-container *ngFor="let item of usersList; index as i">
+                      <button
+                        ngbDropdownItem
+                        (click)="list.assignee = item.name"
+                      >
+                        <div class="avatar">
+                          <img class="avatarImg" src="{{ item.picture }}" />
+                        </div>
+                        <span class="avText">{{ item.name }}</span>
+                      </button>
+                    </ng-container>
+                  </div>
+                </div>
+              </td>
+              <!-- Due date -->
+              <td class="col-2">
+                <div class="form-group hidden">
+                  <div class="input-group">
+                    <input
+                      name="datepicker"
+                      [(ngModel)]="list.dueDate"
+                      class="form-control due_date"
+                      ngbDatepicker
+                      #datepicker="ngbDatepicker"
+                      [autoClose]="'outside'"
+                      (dateSelect)="onDateSelection($event)"
+                      [dayTemplate]="t"
+                      outsideDays="hidden"
+                      [startDate]="list.dueDate"
+                      (click)="datepicker.toggle()"
+                      tabindex="-1"
+                    />
+                    <ng-template #t let-date let-focused="focused">
+                      <span
+                        class="custom-day"
+                        [class.focused]="focused"
+                        [class.range]="isRange(date)"
+                        [class.faded]="isHovered(date) || isInside(date)"
+                        (mouseenter)="hoveredDate = date"
+                        (mouseleave)="hoveredDate = null"
+                      >
+                        {{ date.day }}
+                      </span>
+                    </ng-template>
+                  </div>
+                </div>
+              </td>
+              <!-- Priority -->
+              <td class="col-1">
+                <div ngbDropdown class="d-inline-block">
+                  <button
+                    class="btn tbDropDown"
+                    id="dropdownBasic1"
+                    ngbDropdownToggle
+                  >
+                    <div [class]="'pill ' + list.priority">
+                      {{ list.priority }}
+                    </div>
+                  </button>
+                  <div ngbDropdownMenu aria-labelledby="dropdownBasic1">
+                    <ng-container *ngFor="let priority of priorityList">
+                      <button
+                        ngbDropdownItem
+                        (click)="list.priority = priority"
+                      >
+                        <div [class]="'pill ' + priority">{{ priority }}</div>
+                      </button>
+                    </ng-container>
+                  </div>
+                </div>
+              </td>
+              <!-- Status -->
+              <td class="col-1">
+                <div ngbDropdown class="d-inline-block">
+                  <button
+                    class="btn tbDropDown"
+                    id="dropdownBasic1"
+                    ngbDropdownToggle
+                  >
+                    <div [class]="'pill ' + list.status">{{ list.status }}</div>
+                  </button>
+                  <div ngbDropdownMenu aria-labelledby="dropdownBasic1">
+                    <ng-container *ngFor="let status of statusList">
+                      <button ngbDropdownItem (click)="list.status = status">
+                        <div [class]="'pill ' + status">{{ status }}</div>
+                      </button>
+                    </ng-container>
+                  </div>
+                </div>
+              </td>
+              <!-- Action -->
+              <td class="col-1">
+                <button
+                  style="margin: 9px 10px"
+                  id="addBtn"
+                  type="button"
+                  (click)="deleteDoneLists(list.id)"
+                  class="btn btn-default"
+                >
+                  <i class="fa fa-trash"></i> Delete
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="filter">
+          <div class="row">
+            <h2 class="secHead">
+              <i class="fa fa-filter" aria-hidden="true"></i>Filter
+            </h2>
+          </div>
+          <div class="row" style="padding-left: 40px">
+            <div class="col">
+              <div ngbDropdown class="d-inline-block">
+                <button
+                  class="btn btn-outline-primary"
+                  id="dropdownBasic1"
+                  ngbDropdownToggle
+                >
+                  Priority
+                </button>
+                <div ngbDropdownMenu aria-labelledby="dropdownBasic1">
+                  <ng-container *ngFor="let status of priorityList">
+                    <button
+                      ngbDropdownItem
+                      (click)="filter('priority', status)"
+                    >
+                      {{ status }}
+                    </button>
+                  </ng-container>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" style="padding-left: 40px; margin-top: 20px">
+            <div class="col">
+              <div ngbDropdown class="d-inline-block">
+                <button
+                  class="btn btn-outline-primary"
+                  id="dropdownBasic1"
+                  ngbDropdownToggle
+                >
+                  Status
+                </button>
+                <div ngbDropdownMenu aria-labelledby="dropdownBasic1">
+                  <ng-container *ngFor="let status of statusList">
+                    <button ngbDropdownItem (click)="filter('status', status)">
+                      {{ status }}
+                    </button>
+                  </ng-container>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" style="padding-left: 40px; margin-top: 20px">
+            <div class="col">
+              <div ngbDropdown class="d-inline-block">
+                <button
+                  class="btn btn-outline-primary"
+                  id="dropdownBasic1"
+                  ngbDropdownToggle
+                >
+                  Due date
+                </button>
+                <div ngbDropdownMenu aria-labelledby="dropdownBasic1">
+                  <ng-container *ngFor="let tasks of tasksList">
+                    <button
+                      ngbDropdownItem
+                      (click)="filter('dueDate', tasks.dueDate.year)"
+                    >
+                      {{ tasks.dueDate.year }}
+                    </button>
+                  </ng-container>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button
+            style="margin-left: 40px; margin-top: 20px"
+            type="button"
+            (click)="formTaskData()"
+            class="btn btn-info"
+          >
+            <i class="fa fa-times-circle" aria-hidden="true"></i> Clear
+          </button>
+        </div>
+      </div>
+    </section>
+  </body>
+</html>
